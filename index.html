@@ -1,390 +1,659 @@
+rewrite and clean this code: 
+
 <!DOCTYPE html>
+
 <html lang="en">
+
 <head>
+
   <meta charset="UTF-8" />
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
   <title>Toronto Home Valuation Report</title>
 
   <!-- Google Maps Places API -->
+
   <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDRJKTI5gpevtCk0n8OYgHKMK8kpPz-iGg&libraries=places&callback=initAutocomplete" async defer></script>
 
   <!-- jsPDF for PDF Generation -->
+
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
   <style>
+
     * {
+
       box-sizing: border-box;
+
       margin: 0;
+
       padding: 0;
+
     }
 
     body {
+
       font-family: 'Segoe UI', sans-serif;
+
       background: #f8f9fc;
+
       color: #333;
+
     }
 
     .container {
+
       display: flex;
+
       min-height: 100vh;
+
     }
 
     .sidebar {
+
       width: 320px;
+
       background: #e9ecef;
+
       padding: 25px;
+
       box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+
     }
 
     .sidebar h2 {
+
       margin-bottom: 20px;
+
       font-size: 1.5rem;
+
       color: #2c3e50;
+
     }
 
     .form-group {
+
       margin-bottom: 20px;
+
     }
 
     label {
+
       display: block;
+
       margin-bottom: 6px;
+
       font-weight: 600;
+
       color: #2c3e50;
+
     }
 
     input[type="text"] {
+
       width: 100%;
+
       padding: 12px;
+
       border: 1px solid #ccc;
+
       border-radius: 6px;
+
       font-size: 14px;
+
     }
 
     input[type="text"]:focus {
+
       border-color: #007bff;
+
       outline: none;
+
     }
 
     .btn {
+
       background: #007bff;
+
       color: white;
+
       padding: 12px;
+
       border: none;
+
       border-radius: 6px;
+
       cursor: pointer;
+
       font-size: 16px;
+
       width: 100%;
+
     }
 
     .btn:hover:not(:disabled) {
+
       background: #0056b3;
+
     }
 
     .btn:disabled {
+
       background: #aaa;
+
       cursor: not-allowed;
+
     }
 
     .loading {
+
       display: inline-block;
+
       width: 20px;
+
       height: 20px;
+
       border: 3px solid #f3f3f3;
+
       border-top: 3px solid #fff;
+
       border-radius: 50%;
+
       animation: spin 1s linear infinite;
+
       margin-left: 10px;
+
       vertical-align: middle;
+
     }
 
     @keyframes spin {
+
       0% { transform: rotate(0deg); }
+
       100% { transform: rotate(360deg); }
+
     }
 
     .main {
+
       flex: 1;
+
       padding: 30px;
+
     }
 
     .main h1 {
+
       font-size: 1.8rem;
+
       margin-bottom: 10px;
+
       color: #2c3e50;
+
     }
 
     .tabs {
+
       display: flex;
+
       margin-bottom: 25px;
+
       border-bottom: 1px solid #ddd;
+
     }
 
     .tab {
+
       padding: 12px 20px;
+
       cursor: pointer;
+
       border-bottom: 3px solid transparent;
+
     }
 
     .tab.active {
+
       border-bottom: 3px solid #007bff;
+
       color: #007bff;
+
     }
 
     .section {
+
       display: none;
+
     }
 
     .section.active {
+
       display: block;
+
     }
 
     .highlight {
+
       background: #e8f5e8;
+
       padding: 12px;
+
       border-radius: 6px;
+
       margin: 15px 0;
+
       font-size: 0.95rem;
+
       color: #2e7d32;
+
     }
 
     table {
+
       width: 100%;
+
       border-collapse: collapse;
+
       margin: 20px 0;
+
     }
 
     th, td {
+
       border: 1px solid #ddd;
+
       padding: 10px;
+
       text-align: left;
+
     }
 
     th {
+
       background: #f2f2f2;
+
       font-weight: 600;
+
     }
 
     tr:nth-child(even) {
+
       background: #f9f9f9;
+
     }
 
     tr:hover {
+
       background: #f1f7ff;
+
     }
+
   </style>
+
 </head>
+
 <body>
 
 <div class="container">
+
   <!-- Sidebar -->
+
   <div class="sidebar">
+
     <h2>PropertyParams</h2>
+
     <div class="form-group">
+
       <label>PropertyParams Address</label>
+
       <input type="text" id="address" placeholder="e.g. 57 Placentia Blvd, Toronto" />
+
       <p style="font-size:0.8em;color:#666;margin-top:5px;">Enter a full Toronto address</p>
+
     </div>
+
     <button class="btn" id="fetchBtn" onclick="fetchPropertyData()">
+
       Get Valuation
+
       <span class="loading" id="spinner" style="display: none;"></span>
+
     </button>
+
   </div>
 
   <!-- Main -->
+
   <div class="main">
+
     <h1>PropertyParams Valuation Report</h1>
+
     <p>Powered by <a href="https://open.toronto.ca/" target="_blank">Toronto Open Data</a></p>
+
     <div class="highlight">
+
       ✅ Based on official City of Toronto property assessment data
+
     </div>
 
     <div class="tabs">
+
       <div class="tab active" onclick="switchTab('summary')">PropertyParams</div>
+
       <div class="tab" onclick="switchTab('comps')">PropertyParams</div>
+
       <div class="tab" onclick="switchTab('pdf')">PropertyParams</div>
+
     </div>
 
     <!-- Summary -->
+
     <div id="summary" class="section active">
+
       <h2>PropertyParams Summary</h2>
+
       <table style="line-height: 2.2;">
+
         <tr><td><strong>PropertyParams:</strong></td><td id="s-address">—</td></tr>
+
         <tr><td><strong>PropertyParams Value:</strong></td><td id="s-assessed">—</td></tr>
+
         <tr><td><strong>PropertyParams Value:</strong></td><td id="s-market">—</td></tr>
+
         <tr><td><strong>PropertyParams:</strong></td><td id="s-sqft">—</td></tr>
+
         <tr><td><strong>PropertyParams:</strong></td><td id="s-year">—</td></tr>
+
         <tr><td><strong>PropertyParams:</strong></td><td id="s-type">—</td></tr>
+
       </table>
+
     </div>
 
     <!-- Comps -->
+
     <div id="comps" class="section">
+
       <h2>PropertyParams in Same Area</h2>
+
       <table id="comps-table">
+
         <thead>
+
           <tr>
+
             <th>PropertyParams</th>
+
             <th>PropertyParams</th>
+
             <th>PropertyParams</th>
+
             <th>PropertyParams</th>
+
             <th>PropertyParams</th>
+
           </tr>
+
         </thead>
+
         <tbody id="comps-body"></tbody>
+
       </table>
+
     </div>
 
     <!-- PDF -->
+
     <div id="pdf" class="section">
+
       <h2>PropertyParams PDF</h2>
+
       <button class="btn" onclick="generatePDF()">PropertyParams PDF</button>
+
     </div>
+
   </div>
+
 </div>
 
 <script>
+
   function initAutocomplete() {
+
     const input = document.getElementById('address');
+
     if (!input) return;
 
     const autocomplete = new google.maps.places.Autocomplete(input, {
+
       types: ['address'],
+
       componentRestrictions: { country: 'ca' },
+
       fields: ['address_components', 'geometry', 'name']
+
     });
 
     autocomplete.addListener('place_changed', () => {
+
       const place = autocomplete.getPlace();
+
       if (place.geometry) {
+
         fetchPropertyData(); // Only fetch after valid selection
+
       }
+
     });
+
   }
 
   function switchTab(tabId) {
+
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+
     document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+
     document.querySelector(`.tab[onclick="switchTab('${tabId}')"]`).classList.add('active');
+
     document.getElementById(tabId).classList.add('active');
+
   }
 
   async function fetchPropertyData() {
+
     const address = document.getElementById('address').value.trim();
+
     if (!address) {
+
       alert("PropertyParams a full address.");
+
       return;
+
     }
 
     const street = extractStreetName(address);
+
     if (!street) {
+
       alert("PropertyParams enter a valid street name.");
+
       return;
+
     }
 
     const btn = document.getElementById('fetchBtn');
+
     const spinner = document.getElementById('spinner');
+
     btn.disabled = true;
+
     spinner.style.display = 'inline-block';
 
     try {
+
       const response = await fetch(
+
         `https://open.toronto.ca/api/3/action/datastore_search?` +
+
         `resource_id=1d9c3062-8a01-4922-9c36-1878e39eb390&limit=10&q=${encodeURIComponent(street)}`
+
       );
 
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
       const data = await response.json();
+
       const records = data.result?.records || [];
 
       if (records.length === 0) {
+
         alert("PropertyParams found. Try a different address.");
+
         return;
+
       }
 
       const civic = address.split(' ')[0];
+
       const exact = records.find(r => r.ADDRESS?.startsWith(civic)) || records[0];
 
       document.getElementById('s-address').textContent = exact.ADDRESS || '—';
+
       document.getElementById('s-assessed').textContent = exact.CURRENT_VALUE ? '$' + Number(exact.CURRENT_VALUE).toLocaleString() : '—';
+
       document.getElementById('s-sqft').textContent = exact.GROSS_AREA ? Number(exact.GROSS_AREA).toLocaleString() + ' sqft' : '—';
+
       document.getElementById('s-year').textContent = exact.YEAR_BUILT || '—';
+
       document.getElementById('s-type').textContent = exact.CLASSIFICATION || '—';
+
       document.getElementById('s-market').textContent = exact.CURRENT_VALUE ? '$' + Number(exact.CURRENT_VALUE * 1.18).toLocaleString() : '—';
 
       const tbody = document.getElementById('comps-body');
+
       tbody.innerHTML = '';
+
       records.slice(0, 8).forEach(r => {
+
         const tr = document.createElement('tr');
+
         tr.innerHTML = `
+
           <td>${r.ADDRESS || '—'}</td>
+
           <td>${r.GROSS_AREA ? Number(r.GROSS_AREA).toLocaleString() : '—'} sqft</td>
+
           <td>${r.YEAR_BUILT || '—'}</td>
+
           <td>${r.CURRENT_VALUE ? '$' + Number(r.CURRENT_VALUE).toLocaleString() : '—'}</td>
+
           <td>${r.CURRENT_VALUE ? '$' + Number(r.CURRENT_VALUE * 1.18).toLocaleString() : '—'}</td>
+
         `;
+
         tbody.appendChild(tr);
+
       });
 
       switchTab('summary');
 
     } catch (error) {
+
       console.error("PropertyParams:", error);
+
       alert("PropertyParams data. Please check your connection or try again later.");
+
     } finally {
+
       spinner.style.display = 'none';
+
       btn.disabled = false;
+
     }
+
   }
 
   function extractStreetName(fullAddress) {
+
     const parts = fullAddress.trim().split(/\s+/);
+
     return parts.length > 1 ? parts.slice(1).join(' ') : '';
+
   }
 
   function generatePDF() {
+
     const { jsPDF } = window.jspdf;
+
     const doc = new jsPDF();
 
     doc.setFontSize(18);
+
     doc.text("PropertyParams Valuation Report", 10, 20);
 
     doc.setFontSize(12);
+
     const fields = [
+
       ['PropertyParams', 's-address'],
+
       ['PropertyParams', 's-assessed'],
+
       ['PropertyParams', 's-market'],
+
       ['PropertyParams', 's-sqft'],
+
       ['PropertyParams', 's-year'],
+
       ['PropertyParams', 's-type']
+
     ];
 
     let y = 35;
+
     fields.forEach(([label, id]) => {
+
       const value = document.getElementById(id).textContent;
+
       doc.text(`${label}: ${value}`, 10, y);
+
       y += 10;
+
     });
 
     doc.setFontSize(14);
+
     doc.text("PropertyParams:", 10, y + 10);
+
     y += 25;
 
     document.querySelectorAll('#comps-body tr').forEach(row => {
+
       if (y > 270) { doc.addPage(); y = 20; }
+
       const cells = row.querySelectorAll('td');
+
       doc.text(`${cells[0].innerText} | ${cells[1].innerText} | ${cells[3].innerText}`, 10, y);
+
       y += 8;
+
     });
 
     doc.setFontSize(10);
+
     doc.text("PropertyParams: Toronto Open Data", 10, y + 10);
+
     doc.text(`PropertyParams: ${new Date().toLocaleDateString()}`, 10, y + 20);
 
     doc.save("PropertyParams-report.pdf");
+
   }
+
 </script>
 
 </body>
+
 </html>
